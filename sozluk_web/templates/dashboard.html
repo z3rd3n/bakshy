@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Bakshy{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h2>Welcome, {{ session.username }}!</h2>
+        <div class="action-buttons">
+            <a href="{{ url_for('create_deck') }}" class="btn btn-primary">Create New Deck</a>
+        </div>
+    </div>
+    
+    <div class="deck-section">
+        <h3>Your Vocabulary Decks</h3>
+        
+        {% if decks %}
+            <div class="deck-grid">
+                {% for deck in decks %}
+                    <div class="deck-card">
+                        <div class="deck-info">
+                            <h4>{{ deck.name }}</h4>
+                            <p>{{ deck.description }}</p>
+                            <div class="deck-stats">
+                                <span>{{ deck.card_count }} cards</span>
+                                <span>{{ deck.due_cards_count }} due for review</span>
+                            </div>
+                        </div>
+                        <div class="deck-actions">
+                            <a href="{{ url_for('view_deck', deck_id=deck.id) }}" class="btn btn-secondary">View</a>
+                            <a href="{{ url_for('study_deck', deck_id=deck.id) }}" class="btn btn-primary">Study</a>
+                            <button class="btn btn-danger delete-deck" data-deck-id="{{ deck.id }}" data-deck-name="{{ deck.name }}">Delete</button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Confirmation Modal -->
+            <div id="delete-modal" class="modal">
+                <div class="modal-content">
+                    <h3>Delete Deck</h3>
+                    <p>Are you sure you want to delete the deck "<span id="deck-name"></span>"?</p>
+                    <p class="warning">This will permanently delete all cards in this deck and cannot be undone.</p>
+                    <div class="modal-actions">
+                        <button id="cancel-delete" class="btn btn-secondary">Cancel</button>
+                        <form id="delete-form" method="POST" action="">
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>You don't have any decks yet. Let's create your first deck!</p>
+                <a href="{{ url_for('create_deck') }}" class="btn btn-primary">Create Deck</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('delete-modal');
+        const deckNameSpan = document.getElementById('deck-name');
+        const deleteForm = document.getElementById('delete-form');
+        const cancelDelete = document.getElementById('cancel-delete');
+        
+        // Get all delete buttons
+        const deleteButtons = document.querySelectorAll('.delete-deck');
+        
+        // Add click event to each delete button
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const deckId = this.getAttribute('data-deck-id');
+                const deckName = this.getAttribute('data-deck-name');
+                
+                // Set modal content
+                deckNameSpan.textContent = deckName;
+                deleteForm.action = '/deck/' + deckId + '/delete';
+                
+                // Show modal
+                modal.style.display = 'flex';
+            });
+        });
+        
+        // Close modal when cancel is clicked
+        cancelDelete.addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+        
+        // Close modal when clicking outside of it
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}

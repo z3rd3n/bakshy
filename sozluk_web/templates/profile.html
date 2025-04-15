@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Your Profile - Bakshy{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Your Profile</h2>
+    
+    <form method="POST" action="{{ url_for('profile') }}">
+        <div class="form-group">
+            <label for="api_key">Gemini API Key</label>
+            <input type="password" id="api_key" name="api_key" value="{{ user.api_key or '' }}" required>
+            <small class="form-help">Your API key is stored securely and used for Gemini AI requests.</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="additional_language">Additional Language</label>
+            <input type="text" id="additional_language" name="additional_language" value="{{ user.additional_language or '' }}" placeholder="e.g., Spanish, French, Turkish">
+            <small class="form-help">If set, searches will also show translations in this language</small>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

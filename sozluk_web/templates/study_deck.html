@@ -1,0 +1,323 @@
+{% extends 'base.html' %}
+
+{% block title %}Study {{ deck.name }} - Bakshy{% endblock %}
+
+{% block extra_css %}
+<style>
+    .flashcard-container {
+        perspective: 1000px;
+        width: 100%;
+        max-width: 600px;
+        height: 350px;
+        margin: 0 auto;
+        position: relative;
+    }
+
+    .flashcard {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 0.5s;
+        cursor: pointer;
+    }
+
+    .flashcard.flipped {
+        transform: rotateY(180deg);
+    }
+
+    .flashcard-front, .flashcard-back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .flashcard-front {
+        background-color: #f9f9f9;
+        border: 1px solid #e0e0e0;
+    }
+
+    .flashcard-back {
+        background-color: #f0f8ff;
+        border: 1px solid #d0e0f0;
+        transform: rotateY(180deg);
+    }
+
+    .word {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+    }
+
+    .word-type {
+        font-size: 1.5rem;
+        font-style: italic;
+        margin-bottom: 15px;
+    }
+
+    .translation {
+        font-size: 1.8rem;
+        margin-bottom: 15px;
+    }
+
+    .additional-translation {
+        font-size: 1.5rem;
+        color: #555;
+        margin-bottom: 15px;
+    }
+
+    .example {
+        font-style: italic;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+
+    .etymology {
+        font-size: 1rem;
+        color: #444;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+
+    .notes {
+        font-size: 0.9rem;
+        color: #666;
+        text-align: center;
+    }
+
+    .rating-buttons {
+        margin-top: 30px;
+        display: none;
+    }
+
+    .rating-buttons.visible {
+        display: flex;
+    }
+
+    .rating-btn {
+        margin: 0 5px;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .rating-btn-1 { background-color: #ff6b6b; color: white; }
+    .rating-btn-2 { background-color: #ffa06b; color: white; }
+    .rating-btn-3 { background-color: #ffd56b; color: black; }
+    .rating-btn-4 { background-color: #c0ff6b; color: black; }
+    .rating-btn-5 { background-color: #6bff7d; color: black; }
+
+    .progress-container {
+        margin: 20px auto;
+        width: 100%;
+        max-width: 600px;
+    }
+
+    .progress-bar {
+        height: 10px;
+        background-color: #e0e0e0;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background-color: #4caf50;
+        transition: width 0.3s ease;
+    }
+
+    .completion-message {
+        text-align: center;
+        margin: 40px 0;
+        display: none;
+    }
+
+    .completion-message.visible {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="study-container">
+    <div class="breadcrumb">
+        <a href="{{ url_for('dashboard') }}">Dashboard</a> &gt;
+        <a href="{{ url_for('view_deck', deck_id=deck.id) }}">{{ deck.name }}</a> &gt;
+        <span>Study</span>
+    </div>
+
+    <h2>Studying: {{ deck.name }}</h2>
+    
+    <div class="progress-container">
+        <div class="progress-info">
+            <span id="progress-text">Card 1 of {{ cards|length }}</span>
+        </div>
+        <div class="progress-bar">
+            <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+        </div>
+    </div>
+    
+    <div id="flashcard-container" class="flashcard-container">
+        <div id="flashcard" class="flashcard">
+            <div class="flashcard-front">
+                <div id="front-word" class="word"></div>
+                <div id="front-word-type" class="word-type"></div>
+                <div id="front-notes" class="notes"></div>
+            </div>
+            <div class="flashcard-back">
+                <div id="back-translation" class="translation"></div>
+                <div id="back-additional-translation" class="additional-translation"></div>
+                <div id="back-example" class="example"></div>
+                <div id="back-etymology" class="etymology"></div>
+                <div id="back-notes" class="notes"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="rating-buttons" class="rating-buttons">
+        <p>How well did you remember this card?</p>
+        <div class="buttons-row">
+            <button class="rating-btn rating-btn-1" data-quality="0">Again</button>
+            <button class="rating-btn rating-btn-2" data-quality="1">Hard</button>
+            <button class="rating-btn rating-btn-3" data-quality="3">Good</button>
+            <button class="rating-btn rating-btn-4" data-quality="4">Easy</button>
+            <button class="rating-btn rating-btn-5" data-quality="5">Perfect</button>
+        </div>
+    </div>
+    
+    <div id="completion-message" class="completion-message">
+        <h3>Congratulations!</h3>
+        <p>You've completed this study session.</p>
+        <div class="action-buttons">
+            <a href="{{ url_for('view_deck', deck_id=deck.id) }}" class="btn btn-secondary">Back to Deck</a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Go to Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // @ts-ignore - Template variable
+        // Card data from server
+        const cards = {{ cards|tojson }};
+        let currentCardIndex = 0;
+        
+        const flashcard = document.getElementById('flashcard');
+        const ratingButtons = document.getElementById('rating-buttons');
+        const completionMessage = document.getElementById('completion-message');
+        const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+        
+        // Elements for the front of the card
+        const frontWord = document.getElementById('front-word');
+        const frontWordType = document.getElementById('front-word-type');
+        const frontNotes = document.getElementById('front-notes');
+        
+        // Elements for the back of the card
+        const backTranslation = document.getElementById('back-translation');
+        const backAdditionalTranslation = document.getElementById('back-additional-translation');
+        const backExample = document.getElementById('back-example');
+        const backEtymology = document.getElementById('back-etymology');
+        const backNotes = document.getElementById('back-notes');
+        
+        function loadCard(card) {
+            // Reset the card to front side
+            flashcard.classList.remove('flipped');
+            
+            // Hide rating buttons until card is flipped
+            ratingButtons.classList.remove('visible');
+            
+            // Update front side
+            frontWord.textContent = card.front;
+            frontWordType.textContent = card.word_type || '';
+            frontNotes.textContent = card.notes || '';
+            
+            // Update back side
+            backTranslation.textContent = card.back;
+            backAdditionalTranslation.textContent = card.additional_translation || '';
+            backExample.innerHTML = card.example ? 
+                `<div>${card.example}</div>` + 
+                (card.example_translation ? `<div>${card.example_translation}</div>` : '') : '';
+            backEtymology.textContent = card.etymology || '';
+            backNotes.textContent = '';
+            
+            // Update progress display
+            progressText.textContent = `Card ${currentCardIndex + 1} of ${cards.length}`;
+            const progressPercentage = ((currentCardIndex + 1) / cards.length) * 100;
+            progressFill.style.width = `${progressPercentage}%`;
+        }
+        
+        flashcard.addEventListener('click', function() {
+            // Only flip the card if we're not at the end
+            if (currentCardIndex < cards.length) {
+                // If the card isn't flipped yet, flip it and show rating buttons
+                if (!flashcard.classList.contains('flipped')) {
+                    flashcard.classList.add('flipped');
+                    ratingButtons.classList.add('visible');
+                }
+            }
+        });
+        
+        // Set up rating buttons
+        const ratingBtns = document.querySelectorAll('.rating-btn');
+        ratingBtns.forEach(button => {
+            button.addEventListener('click', function() {
+                const quality = parseInt(this.dataset.quality);
+                const currentCard = cards[currentCardIndex];
+                
+                // Send rating to server
+                fetch(`/card/${currentCard.id}/update`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `quality=${quality}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Move to the next card
+                        currentCardIndex++;
+                        
+                        // If we have more cards, load the next one
+                        if (currentCardIndex < cards.length) {
+                            loadCard(cards[currentCardIndex]);
+                        } else {
+                            // Hide the flashcard and show completion message
+                            document.getElementById('flashcard-container').style.display = 'none';
+                            ratingButtons.classList.remove('visible');
+                            completionMessage.classList.add('visible');
+                        }
+                    } else {
+                        alert('Error updating card: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while updating the card.');
+                });
+            });
+        });
+        
+        // Load the first card
+        if (cards.length > 0) {
+            loadCard(cards[0]);
+        } else {
+            document.getElementById('flashcard-container').style.display = 'none';
+            completionMessage.classList.add('visible');
+        }
+    });
+</script>
+{% endblock %}

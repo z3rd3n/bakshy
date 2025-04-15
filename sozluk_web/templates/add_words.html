@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Words - {{ deck.name }} - Bakshy{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="breadcrumb">
+        <a href="{{ url_for('dashboard') }}">Dashboard</a> &gt;
+        <a href="{{ url_for('view_deck', deck_id=deck.id) }}">{{ deck.name }}</a> &gt;
+        <span>Add Words</span>
+    </div>
+
+    <h2>Add Words to "{{ deck.name }}"</h2>
+    
+    <form method="POST" action="{{ url_for('add_words', deck_id=deck.id) }}">
+        <div class="form-group">
+            <label for="api_key">Gemini API Key</label>
+            <input type="password" id="api_key" name="api_key" required>
+            <small class="form-help">This is only used for this request and not stored on the server</small>
+        </div>
+
+        <div class="form-group">
+            <label for="additional_language">Additional Language (Optional)</label>
+            <input type="text" id="additional_language" name="additional_language" placeholder="e.g., Spanish, French, Turkish">
+            <small class="form-help">If provided, the system will also return translations in this language</small>
+        </div>
+
+        <div class="form-group">
+            <label for="words">Enter German Words</label>
+            <textarea id="words" name="words" rows="6" required placeholder="Enter words separated by commas or new lines"></textarea>
+            <small class="form-help">Enter German words to add to your deck. Separate multiple words with commas or new lines.</small>
+        </div>
+        
+        <div class="form-actions">
+            <a href="{{ url_for('view_deck', deck_id=deck.id) }}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Add Words</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
