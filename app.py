@@ -255,8 +255,11 @@ def view_deck(deck_id):
         flash('You do not have permission to view this deck', 'error')
         return redirect(url_for('dashboard'))
     
+    # Get the current user for preference settings
+    current_user = db.session.get(User, session.get('user_id'))
+    
     cards = Card.query.filter_by(deck_id=deck_id).all()
-    return render_template('view_deck.html', deck=deck, cards=cards)
+    return render_template('view_deck.html', deck=deck, cards=cards, current_user=current_user)
 
 @app.route('/deck/<int:deck_id>/add', methods=['GET', 'POST'])
 @login_required
@@ -343,6 +346,16 @@ def study_deck(deck_id):
         flash('You do not have permission to study this deck', 'error')
         return redirect(url_for('dashboard'))
     
+    # Get the current user for preference settings
+    current_user = db.session.get(User, session.get('user_id'))
+    
+    # Create a serializable dictionary with only the user preferences we need
+    user_preferences = {
+        'show_etymology': current_user.show_etymology,
+        'show_additional_language': current_user.show_additional_language,
+        'additional_language': current_user.additional_language
+    }
+    
     cards_query = Card.query.filter_by(deck_id=deck_id).all()
     
     if not cards_query:
@@ -356,13 +369,16 @@ def study_deck(deck_id):
             'id': card.id,
             'front': card.front,
             'back': card.back,
+            'additional_translation': card.additional_translation,
             'example': card.example,
             'example_translation': card.example_translation,
             'notes': card.notes,
+            'word_type': card.word_type,
+            'etymology': card.etymology,
             'is_due': card.is_due
         })
     
-    return render_template('study_deck.html', deck=deck, cards=cards)
+    return render_template('study_deck.html', deck=deck, cards=cards, user_preferences=user_preferences)
 
 @app.route('/card/<int:card_id>/update', methods=['POST'])
 @login_required
@@ -533,15 +549,15 @@ def add_to_deck():
         new_card = Card(
             front=word_data.get('base_d', ''),
             back=word_data.get('base_e', ''),
+            additional_translation=word_data.get('additional_translation', ''),
             example=word_data.get('s1', ''),
             example_translation=word_data.get('s1e', ''),
+            word_type=word_data.get('word_type', ''),
+            etymology=word_data.get('etymology', ''),
             notes=', '.join(filter(None, [
                 word_data.get('artikel_d', ''),
                 word_data.get('plural_d', ''),
-                word_data.get('full_d', ''),
-                word_data.get('word_type', ''),
-                word_data.get('etymology', ''),
-                word_data.get('additional_translation', '')
+                word_data.get('full_d', '')
             ])),
             deck_id=deck_id
         )
@@ -567,9 +583,14 @@ def profile():
     if request.method == 'POST':
         api_key = request.form.get('api_key')
         additional_language = request.form.get('additional_language')
+        show_etymology = 'show_etymology' in request.form
+        show_additional_language = 'show_additional_language' in request.form
         
         user.api_key = api_key
         user.additional_language = additional_language
+        user.show_etymology = show_etymology
+        user.show_additional_language = show_additional_language
+        
         db.session.commit()
         flash('Profile settings saved successfully', 'success')
         

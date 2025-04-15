@@ -67,8 +67,9 @@
             {% if decks %}
                 <div class="add-to-deck">
                     <h3>Add to Your Deck</h3>
-                    <form method="POST" action="{{ url_for('add_to_deck') }}">
+                    <form method="POST" action="{{ url_for('add_to_deck') }}" id="add-to-deck-form">
                         <input type="hidden" name="word_data" value='{{ word_data|tojson }}'>
+                        
                         <div class="form-group">
                             <select name="deck_id" class="deck-select" required>
                                 <option value="" disabled selected>Select a deck</option>
@@ -273,6 +274,26 @@
         border: 1px solid #ced4da;
         border-radius: 0.25rem;
         margin-bottom: 1rem;
+    }
+    
+    /* Checkbox styles */
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .checkbox-item input[type="checkbox"] {
+        width: auto;
+        margin-right: 0.5rem;
+        cursor: pointer;
+    }
+    
+    .checkbox-item label {
+        cursor: pointer;
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
     }
     
     .error-container, .no-results {

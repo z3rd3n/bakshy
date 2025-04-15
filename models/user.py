@@ -10,6 +10,8 @@ class User(db.Model):
     password = db.Column(db.String(200), nullable=False)
     api_key = db.Column(db.String(100))
     additional_language = db.Column(db.String(50))
+    show_etymology = db.Column(db.Boolean, default=True)
+    show_additional_language = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships

@@ -40,7 +40,9 @@
                     <tr>
                         <th>German</th>
                         <th>English</th>
-                        <th>Notes</th>
+                        {% if current_user and current_user.show_additional_language and current_user.additional_language %}
+                        <th>{{ current_user.additional_language }}</th>
+                        {% endif %}
                         <th>Last Reviewed</th>
                         <th>Actions</th>
                     </tr>
@@ -50,7 +52,9 @@
                         <tr class="{{ 'due' if card.is_due else '' }}">
                             <td>{{ card.front }}</td>
                             <td>{{ card.back }}</td>
-                            <td>{{ card.notes }}</td>
+                            {% if current_user and current_user.show_additional_language and current_user.additional_language %}
+                            <td>{{ card.additional_translation }}</td>
+                            {% endif %}
                             <td>
                                 {% if card.last_reviewed %}
                                     {{ card.last_reviewed.strftime('%Y-%m-%d') }}

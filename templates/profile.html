@@ -19,6 +19,14 @@
             <small class="form-help">If set, searches will also show translations in this language</small>
         </div>
         
+        <div class="form-group checkbox-group">
+            <div class="checkbox-item">
+                <input type="checkbox" id="show_additional_language" name="show_additional_language" {% if user.show_additional_language %}checked{% endif %}>
+                <label for="show_additional_language">Show additional language on cards</label>
+            </div>
+            <small class="form-help">If unchecked, additional language translations won't be shown on cards</small>
+        </div>
+        
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Settings</button>
         </div>

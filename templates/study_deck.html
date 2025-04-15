@@ -8,7 +8,7 @@
         perspective: 1000px;
         width: 100%;
         max-width: 600px;
-        height: 350px;
+        height: 380px;
         margin: 0 auto;
         position: relative;
     }
@@ -57,10 +57,22 @@
         margin-bottom: 20px;
     }
 
+    .artikel {
+        font-size: 2.5rem;
+        color: #666;
+        margin-bottom: 10px;
+    }
+
     .word-type {
         font-size: 1.5rem;
         font-style: italic;
         margin-bottom: 15px;
+    }
+
+    .verb-forms {
+        font-size: 1.3rem;
+        margin-bottom: 15px;
+        text-align: center;
     }
 
     .translation {
@@ -78,6 +90,14 @@
         font-style: italic;
         text-align: center;
         margin-bottom: 15px;
+        padding: 10px;
+        background-color: #e9f5ff;
+        border-radius: 5px;
+        width: 90%;
+    }
+
+    .example-item {
+        margin-bottom: 8px;
     }
 
     .etymology {
@@ -85,12 +105,10 @@
         color: #444;
         text-align: center;
         margin-bottom: 15px;
-    }
-
-    .notes {
-        font-size: 0.9rem;
-        color: #666;
-        text-align: center;
+        padding: 10px;
+        background-color: #f5f5f5;
+        border-radius: 5px;
+        width: 90%;
     }
 
     .rating-buttons {
@@ -170,16 +188,16 @@
     <div id="flashcard-container" class="flashcard-container">
         <div id="flashcard" class="flashcard">
             <div class="flashcard-front">
+                <div id="front-artikel" class="artikel"></div>
                 <div id="front-word" class="word"></div>
                 <div id="front-word-type" class="word-type"></div>
-                <div id="front-notes" class="notes"></div>
+                <div id="front-verb-forms" class="verb-forms"></div>
             </div>
             <div class="flashcard-back">
                 <div id="back-translation" class="translation"></div>
                 <div id="back-additional-translation" class="additional-translation"></div>
                 <div id="back-example" class="example"></div>
                 <div id="back-etymology" class="etymology"></div>
-                <div id="back-notes" class="notes"></div>
             </div>
         </div>
     </div>
@@ -209,9 +227,9 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // @ts-ignore - Template variable
         // Card data from server
         const cards = {{ cards|tojson }};
+        const userPreferences = {{ user_preferences|tojson }};
         let currentCardIndex = 0;
         
         const flashcard = document.getElementById('flashcard');
@@ -221,16 +239,38 @@
         const progressText = document.getElementById('progress-text');
         
         // Elements for the front of the card
+        const frontArtikel = document.getElementById('front-artikel');
         const frontWord = document.getElementById('front-word');
         const frontWordType = document.getElementById('front-word-type');
-        const frontNotes = document.getElementById('front-notes');
+        const frontVerbForms = document.getElementById('front-verb-forms');
         
         // Elements for the back of the card
         const backTranslation = document.getElementById('back-translation');
         const backAdditionalTranslation = document.getElementById('back-additional-translation');
         const backExample = document.getElementById('back-example');
         const backEtymology = document.getElementById('back-etymology');
-        const backNotes = document.getElementById('back-notes');
+        
+        function parseNotes(notes) {
+            if (!notes) return { artikel: '', verbForms: '', plural: '' };
+            
+            const parts = notes.split(',').map(p => p.trim());
+            let artikel = '';
+            let verbForms = '';
+            let plural = '';
+            
+            // First part might be the artikel (der, die, das)
+            if (parts[0] && ['der', 'die', 'das'].includes(parts[0].toLowerCase())) {
+                artikel = parts[0];
+            }
+            
+            // Look for verb forms (usually include commas inside)
+            const verbFormsMatch = notes.match(/([a-zäöüß]+, [a-zäöüß]+, (?:ist|hat) [a-zäöüß]+)/i);
+            if (verbFormsMatch) {
+                verbForms = verbFormsMatch[0];
+            }
+            
+            return { artikel, verbForms, plural };
+        }
         
         function loadCard(card) {
             // Reset the card to front side
@@ -239,19 +279,49 @@
             // Hide rating buttons until card is flipped
             ratingButtons.classList.remove('visible');
             
+            // Parse notes to extract artikel and verb forms
+            const { artikel, verbForms } = parseNotes(card.notes);
+            
             // Update front side
+            frontArtikel.textContent = artikel;
             frontWord.textContent = card.front;
             frontWordType.textContent = card.word_type || '';
-            frontNotes.textContent = card.notes || '';
+            frontVerbForms.textContent = '';
+            
+            if (card.word_type && card.word_type.toLowerCase() === 'verb') {
+                frontVerbForms.textContent = verbForms;
+            }
             
             // Update back side
             backTranslation.textContent = card.back;
-            backAdditionalTranslation.textContent = card.additional_translation || '';
-            backExample.innerHTML = card.example ? 
-                `<div>${card.example}</div>` + 
-                (card.example_translation ? `<div>${card.example_translation}</div>` : '') : '';
-            backEtymology.textContent = card.etymology || '';
-            backNotes.textContent = '';
+            
+            // Show additional translation based on user preference
+            if (userPreferences.show_additional_language && card.additional_translation) {
+                backAdditionalTranslation.textContent = userPreferences.additional_language + ': ' + card.additional_translation;
+                backAdditionalTranslation.style.display = 'block';
+            } else {
+                backAdditionalTranslation.style.display = 'none';
+            }
+            
+            // Add examples with translations
+            if (card.example) {
+                let exampleHTML = `<div class="example-item">${card.example}</div>`;
+                if (card.example_translation) {
+                    exampleHTML += `<div class="example-item">${card.example_translation}</div>`;
+                }
+                backExample.innerHTML = exampleHTML;
+                backExample.style.display = 'block';
+            } else {
+                backExample.style.display = 'none';
+            }
+            
+            // Show etymology based on user preference
+            if (userPreferences.show_etymology && card.etymology) {
+                backEtymology.textContent = card.etymology;
+                backEtymology.style.display = 'block';
+            } else {
+                backEtymology.style.display = 'none';
+            }
             
             // Update progress display
             progressText.textContent = `Card ${currentCardIndex + 1} of ${cards.length}`;
